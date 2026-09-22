@@ -8,12 +8,17 @@ public class BikeRider extends Rider {
         this.maxDistanceKm = maxDistanceKm;
     }
 
-    public double getFuelLevel() { return fuelLevel; }
-    public double getMaxDistanceKm() { return maxDistanceKm; }
+    public double getFuelLevel() { 
+        return fuelLevel; 
+    }
+    
+    public double getMaxDistanceKm() { 
+        return maxDistanceKm; 
+    }
 
     @Override
     public String getRoleDescription() {
-        return "Fast Motorbike Rider (Max Dist: " + maxDistanceKm + " km)";
+        return "Fast Motorbike Rider (Fuel: " + fuelLevel + "%, Max Dist: " + maxDistanceKm + " km)";
     }
 
     // Speed: 30 km/h avg

@@ -1,38 +1,99 @@
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 public class DeliveryManager {
-    private ArrayList<Order> orderList;
     private HashMap<String, Rider> riderMap;
+    private ArrayList<Order> orderList;
 
     public DeliveryManager() {
-        this.orderList = new ArrayList<>();
-        this.riderMap = new HashMap<>();
+        riderMap = new HashMap<>();
+        orderList = new ArrayList<>();
     }
 
-    // Add Rider to HashMap
     public void addRider(Rider rider) {
         riderMap.put(rider.getId(), rider);
     }
 
-    // Add Order to List
     public void addOrder(Order order) {
         orderList.add(order);
     }
 
-    // Assign first available matching rider
-    public Rider assignRider(Order order) throws NoRiderAvailableException {
-        for (Rider rider : riderMap.values()) {
-            if (rider.isAvailable()) {
-                rider.assignOrder(order);
-                return rider;
-            }
-        }
-        throw new NoRiderAvailableException("No riders are currently available to take Order #" + order.getOrderId());
+    public HashMap<String, Rider> getRiderMap() {
+        return riderMap;
     }
 
-    // Complete order by Rider ID
+    public ArrayList<Order> getOrderList() {
+        return orderList;
+    }
+
+    // মেথড ওভারলোডিং ১: আইডি দিয়ে রাইডার সার্চ
+    public Rider searchRider(String id) {
+        return riderMap.get(id);
+    }
+
+    // মেথড ওভারলোডিং ২: বাহনের ধরন ও অ্যাভেইলেবিলিটি দিয়ে সার্চ
+    public Rider searchRider(String vehicleType, boolean onlyAvailable) {
+        for (Rider r : riderMap.values()) {
+            if (r.getVehicleType().equalsIgnoreCase(vehicleType)) {
+                if (!onlyAvailable || r.isAvailable()) {
+                    return r;
+                }
+            }
+        }
+        return null;
+    }
+
+    // দূরত্ব এবং বাহন ভিত্তিক স্মার্ট ডিসপ্যাচ লজিক
+    public Rider assignRider(Order order, double distanceKm, String preference) throws NoRiderAvailableException {
+        // ১. যদি ইউজার সরাসরি বাইক চেয়ে থাকে
+        if ("Bike".equalsIgnoreCase(preference)) {
+            Rider b = searchRider("Bike", true);
+            if (b != null) {
+                b.assignOrder(order);
+                return b;
+            }
+            throw new NoRiderAvailableException("No Bike Rider available for Order #" + order.getOrderId());
+        }
+
+        // ২. যদি ইউজার সরাসরি সাইকেল চেয়ে থাকে
+        if ("Cycle".equalsIgnoreCase(preference)) {
+            if (distanceKm > 5.0) {
+                throw new NoRiderAvailableException("Order distance (" + distanceKm + " km) is too far for a Cycle Rider! (Max 5 km)");
+            }
+            Rider c = searchRider("Bicycle", true);
+            if (c != null) {
+                c.assignOrder(order);
+                return c;
+            }
+            throw new NoRiderAvailableException("No Cycle Rider available for Order #" + order.getOrderId());
+        }
+
+        // ৩. যদি Preference = "Any" থাকে (স্মার্ট ডিসট্যান্স বেসড সিলেকশন)
+        if (distanceKm <= 5.0) {
+            // কম দূরত্বে আগে সাইকেল রাইডারকে অগ্রাধিকার দেওয়া হবে
+            Rider c = searchRider("Bicycle", true);
+            if (c != null) {
+                c.assignOrder(order);
+                return c;
+            }
+            // সাইকেল খালি না থাকলে বাইক দেওয়া হবে
+            Rider b = searchRider("Bike", true);
+            if (b != null) {
+                b.assignOrder(order);
+                return b;
+            }
+        } else {
+            // ৫ কিমির বেশি হলে সরাসরি বাইক রাইডার দেওয়া হবে
+            Rider b = searchRider("Bike", true);
+            if (b != null) {
+                b.assignOrder(order);
+                return b;
+            }
+        }
+
+        throw new NoRiderAvailableException("No suitable riders available to deliver Order #" + order.getOrderId() + " (" + distanceKm + " km)");
+    }
+
     public boolean completeOrder(String riderId) {
         Rider rider = riderMap.get(riderId);
         if (rider != null && !rider.isAvailable()) {
@@ -40,28 +101,5 @@ public class DeliveryManager {
             return true;
         }
         return false;
-    }
-
-    // Method Overloading: Search by ID
-    public Rider searchRider(String id) {
-        return riderMap.get(id);
-    }
-
-    // Method Overloading: Search by Vehicle Type
-    public Rider searchRider(String vehicleType, boolean onlyAvailable) {
-        for (Rider rider : riderMap.values()) {
-            if (rider.getVehicleType().equalsIgnoreCase(vehicleType) && (!onlyAvailable || rider.isAvailable())) {
-                return rider;
-            }
-        }
-        return null;
-    }
-
-    public List<Order> getOrderList() {
-        return orderList;
-    }
-
-    public HashMap<String, Rider> getRiderMap() {
-        return riderMap;
     }
 }

@@ -39,7 +39,6 @@ public class Main {
             System.out.println(r.getName() + " (" + r.getRoleDescription() + ")");
             System.out.printf("Estimated time for 10 km: %.2f hours\n", r.calculateDeliveryTime(10));
         }
-
         System.out.println("\n=== 2. Order Assignment & Interface Testing ===");
         Order order1 = new Order("ORD-101", "Tanvir", "KFC", "GEC Circle");
         Order order2 = new Order("ORD-102", "Sadia", "Pizza Hut", "2 No Gate");
