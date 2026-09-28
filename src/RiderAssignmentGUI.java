@@ -1,8 +1,11 @@
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 public class RiderAssignmentGUI extends JFrame {
@@ -82,7 +85,7 @@ public class RiderAssignmentGUI extends JFrame {
         tfRiderName = createStyledTextField();
         tfRiderPhone = createStyledTextField();
         tfExtraAttr = createStyledTextField();
-        cbVehicleType = new JComboBox<>(new String[]{"Bike", "Cycle"});
+        cbVehicleType = new JComboBox<>(new String[] { "Bike", "Cycle" });
         cbVehicleType.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblExtra = createStyledLabel("Fuel Level (%):");
 
@@ -170,7 +173,7 @@ public class RiderAssignmentGUI extends JFrame {
         tablesContainer.setOpaque(false);
 
         // Rider Status Table
-        riderTableModel = new DefaultTableModel(new String[]{"ID", "Name", "Vehicle", "Status", "Details"}, 0);
+        riderTableModel = new DefaultTableModel(new String[] { "ID", "Name", "Vehicle", "Status", "Details" }, 0);
         riderTable = createStyledTable(riderTableModel);
         riderTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         riderTable.getColumnModel().getColumn(0).setPreferredWidth(60);
@@ -179,16 +182,28 @@ public class RiderAssignmentGUI extends JFrame {
         riderTable.getColumnModel().getColumn(3).setPreferredWidth(100);
         riderTable.getColumnModel().getColumn(4).setPreferredWidth(320);
 
-        JScrollPane riderScroll = new JScrollPane(riderTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        riderScroll.setBorder(BorderFactory.createTitledBorder(new LineBorder(new Color(209, 213, 219), 1), "Live Rider Fleet Status", TitledBorder.LEFT, TitledBorder.TOP, new Font("Segoe UI", Font.BOLD, 13), PRIMARY_BLUE));
+        JScrollPane riderScroll = new JScrollPane(riderTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        riderScroll.setBorder(
+                BorderFactory.createTitledBorder(new LineBorder(new Color(209, 213, 219), 1), "Live Rider Fleet Status",
+                        TitledBorder.LEFT, TitledBorder.TOP, new Font("Segoe UI", Font.BOLD, 13), PRIMARY_BLUE));
         riderScroll.getViewport().setBackground(Color.WHITE);
         tablesContainer.add(riderScroll);
 
         // Live Order Table
-        orderTableModel = new DefaultTableModel(new String[]{"Order ID", "Customer", "Restaurant", "Status"}, 0);
+        orderTableModel = new DefaultTableModel(
+                new String[] { "Order ID", "Customer", "Restaurant", "Status", "Action" }, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
         orderTable = createStyledTable(orderTableModel);
+        setupTrashColumn();
         JScrollPane orderScroll = new JScrollPane(orderTable);
-        orderScroll.setBorder(BorderFactory.createTitledBorder(new LineBorder(new Color(209, 213, 219), 1), "Active Orders Log", TitledBorder.LEFT, TitledBorder.TOP, new Font("Segoe UI", Font.BOLD, 13), PRIMARY_BLUE));
+        orderScroll.setBorder(
+                BorderFactory.createTitledBorder(new LineBorder(new Color(209, 213, 219), 1), "Active Orders Log",
+                        TitledBorder.LEFT, TitledBorder.TOP, new Font("Segoe UI", Font.BOLD, 13), PRIMARY_BLUE));
         orderScroll.getViewport().setBackground(Color.WHITE);
         tablesContainer.add(orderScroll);
 
@@ -202,8 +217,8 @@ public class RiderAssignmentGUI extends JFrame {
         panel.setBackground(CARD_BG);
         panel.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(new Color(229, 231, 235), 1, true),
-                BorderFactory.createTitledBorder(new EmptyBorder(4, 8, 8, 8), title, TitledBorder.LEFT, TitledBorder.TOP, new Font("Segoe UI", Font.BOLD, 13), PRIMARY_BLUE)
-        ));
+                BorderFactory.createTitledBorder(new EmptyBorder(4, 8, 8, 8), title, TitledBorder.LEFT,
+                        TitledBorder.TOP, new Font("Segoe UI", Font.BOLD, 13), PRIMARY_BLUE)));
         return panel;
     }
 
@@ -219,8 +234,7 @@ public class RiderAssignmentGUI extends JFrame {
         tf.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tf.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(new Color(209, 213, 219), 1, true),
-                new EmptyBorder(3, 6, 3, 6)
-        ));
+                new EmptyBorder(3, 6, 3, 6)));
         return tf;
     }
 
@@ -249,7 +263,55 @@ public class RiderAssignmentGUI extends JFrame {
         return table;
     }
 
-    // ৪ জন রাইডার ইনিশিয়াল সেট করা হলো (২ জন বাইক, ২ জন সাইকেল)
+    private void setupTrashColumn() {
+        orderTable.getColumnModel().getColumn(4).setMaxWidth(70);
+        orderTable.getColumnModel().getColumn(4).setMinWidth(70);
+
+        Icon trashIcon = new TrashIcon(16, new Color(220, 38, 38));
+        DefaultTableCellRenderer trashRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int column) {
+                super.getTableCellRendererComponent(table, "", isSelected, false, row, column);
+                String status = (String) table.getModel().getValueAt(row, 3);
+                setIcon("Delivered".equalsIgnoreCase(status) ? trashIcon : null);
+                setHorizontalAlignment(SwingConstants.CENTER);
+                return this;
+            }
+        };
+        orderTable.getColumnModel().getColumn(4).setCellRenderer(trashRenderer);
+
+        orderTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int row = orderTable.rowAtPoint(e.getPoint());
+                int col = orderTable.columnAtPoint(e.getPoint());
+                if (row < 0 || col != 4) {
+                    return;
+                }
+
+                String status = (String) orderTableModel.getValueAt(row, 3);
+                if (!"Delivered".equalsIgnoreCase(status)) {
+                    return;
+                }
+
+                String orderId = (String) orderTableModel.getValueAt(row, 0);
+                int choice = JOptionPane.showConfirmDialog(
+                        RiderAssignmentGUI.this,
+                        "Delete delivered order #" + orderId + "?",
+                        "Confirm Delete",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE);
+
+                if (choice == JOptionPane.YES_OPTION) {
+                    manager.removeOrder(orderId);
+                    refreshTables();
+                }
+            }
+        });
+    }
+
+    // ৪ জন রাইডার ইনিশিয়াল সেট করা হলো (২ জন বাইক, ২ জন সাইকেল)
     private void seedInitialData() {
         manager.addRider(new BikeRider("Alice", "R1", "01711111111", 85.0, 42.5));
         manager.addRider(new BikeRider("Bob", "R2", "01722222222", 70.0, 35.0));
@@ -261,7 +323,7 @@ public class RiderAssignmentGUI extends JFrame {
         for (Order o : manager.getOrderList()) {
             if ("Pending".equalsIgnoreCase(o.getStatus())) {
                 try {
-                    // পেন্ডিং অর্ডারগুলোতে ৫ কিমি ধরে ফ্রি রাইডার দেওয়া হবে
+                    // পেন্ডিং অর্ডারগুলোতে ৫ কিমি ধরে ফ্রি রাইডার দেওয়া হবে
                     manager.assignRider(o, 4.0, "Any");
                 } catch (NoRiderAvailableException e) {
                     break;
@@ -295,7 +357,8 @@ public class RiderAssignmentGUI extends JFrame {
             String extraStr = tfExtraAttr.getText().trim();
 
             if (id.isEmpty() || name.isEmpty() || extraStr.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please enter all rider details!", "Missing Input", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Please enter all rider details!", "Missing Input",
+                        JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -314,7 +377,8 @@ public class RiderAssignmentGUI extends JFrame {
             refreshTables();
             JOptionPane.showMessageDialog(this, "Rider registered successfully!");
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Fuel/MaxLoad must be numeric!", "Input Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Fuel/MaxLoad must be numeric!", "Input Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -327,7 +391,8 @@ public class RiderAssignmentGUI extends JFrame {
             String distStr = tfDistance.getText().trim();
 
             if (orderId.isEmpty() || customer.isEmpty() || distStr.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please fill in Order ID, Customer, and Distance!", "Missing Input", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Please fill in Order ID, Customer, and Distance!", "Missing Input",
+                        JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -346,8 +411,8 @@ public class RiderAssignmentGUI extends JFrame {
 
             JOptionPane.showMessageDialog(this,
                     "Order assigned to: " + assignedRider.getName() + " (" + assignedRider.getVehicleType() + ")" +
-                    "\nTrip Distance: " + distance + " km" +
-                    "\nEstimated Delivery Time: " + String.format("%.2f", time) + " hours",
+                            "\nTrip Distance: " + distance + " km" +
+                            "\nEstimated Delivery Time: " + String.format("%.2f", time) + " hours",
                     "Dispatch Complete", JOptionPane.INFORMATION_MESSAGE);
 
         } catch (NoRiderAvailableException ex) {
@@ -355,14 +420,16 @@ public class RiderAssignmentGUI extends JFrame {
             refreshTables();
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Dispatch Notice", JOptionPane.ERROR_MESSAGE);
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Trip distance must be a valid number!", "Input Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Trip distance must be a valid number!", "Input Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void completeDeliveryAction() {
         int selectedRow = riderTable.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Please select an active rider from the fleet table first.", "Selection Needed", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please select an active rider from the fleet table first.",
+                    "Selection Needed", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
@@ -374,14 +441,15 @@ public class RiderAssignmentGUI extends JFrame {
             refreshTables();
             JOptionPane.showMessageDialog(this, "Delivery completed! Rider is available now.");
         } else {
-            JOptionPane.showMessageDialog(this, "The selected rider has no active delivery task.", "Notice", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "The selected rider has no active delivery task.", "Notice",
+                    JOptionPane.WARNING_MESSAGE);
         }
     }
 
     private void refreshTables() {
         riderTableModel.setRowCount(0);
         for (Rider r : manager.getRiderMap().values()) {
-            riderTableModel.addRow(new Object[]{
+            riderTableModel.addRow(new Object[] {
                     r.getId(),
                     r.getName(),
                     r.getVehicleType(),
@@ -392,12 +460,56 @@ public class RiderAssignmentGUI extends JFrame {
 
         orderTableModel.setRowCount(0);
         for (Order o : manager.getOrderList()) {
-            orderTableModel.addRow(new Object[]{
+            orderTableModel.addRow(new Object[] {
                     o.getOrderId(),
                     o.getCustomerName(),
                     o.getRestaurant(),
-                    o.getStatus()
+                    o.getStatus(),
+                    ""
             });
+        }
+    }
+
+    private static class TrashIcon implements Icon {
+        private final int size;
+        private final Color color;
+
+        TrashIcon(int size, Color color) {
+            this.size = size;
+            this.color = color;
+        }
+
+        @Override
+        public int getIconWidth() {
+            return size;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return size;
+        }
+
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(color);
+            g2.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            g2.drawLine(x + 2, y + 4, x + size - 2, y + 4);
+            g2.drawLine(x + size / 2 - 3, y + 4, x + size / 2 - 3, y + 2);
+            g2.drawLine(x + size / 2 - 3, y + 2, x + size / 2 + 3, y + 2);
+            g2.drawLine(x + size / 2 + 3, y + 2, x + size / 2 + 3, y + 4);
+
+            g2.drawPolygon(
+                    new int[] { x + 4, x + size - 4, x + size - 5, x + 5 },
+                    new int[] { y + 6, y + 6, y + size - 2, y + size - 2 },
+                    4);
+
+            g2.drawLine(x + 7, y + 8, x + 7, y + size - 4);
+            g2.drawLine(x + size - 7, y + 8, x + size - 7, y + size - 4);
+
+            g2.dispose();
         }
     }
 

@@ -26,12 +26,12 @@ public class DeliveryManager {
         return orderList;
     }
 
-    // মেথড ওভারলোডিং ১: আইডি দিয়ে রাইডার সার্চ
+    // মেথড ওভারলোডিং ১: আইডি দিয়ে রাইডার সার্চ
     public Rider searchRider(String id) {
         return riderMap.get(id);
     }
 
-    // মেথড ওভারলোডিং ২: বাহনের ধরন ও অ্যাভেইলেবিলিটি দিয়ে সার্চ
+    // মেথড ওভারলোডিং ২: বাহনের ধরন ও অ্যাভেইলেবিলিটি দিয়ে সার্চ
     public Rider searchRider(String vehicleType, boolean onlyAvailable) {
         for (Rider r : riderMap.values()) {
             if (r.getVehicleType().equalsIgnoreCase(vehicleType)) {
@@ -45,7 +45,7 @@ public class DeliveryManager {
 
     // দূরত্ব এবং বাহন ভিত্তিক স্মার্ট ডিসপ্যাচ লজিক
     public Rider assignRider(Order order, double distanceKm, String preference) throws NoRiderAvailableException {
-        // ১. যদি ইউজার সরাসরি বাইক চেয়ে থাকে
+        // ১. যদি ইউজার সরাসরি বাইক চেয়ে থাকে
         if ("Bike".equalsIgnoreCase(preference)) {
             Rider b = searchRider("Bike", true);
             if (b != null) {
@@ -55,10 +55,11 @@ public class DeliveryManager {
             throw new NoRiderAvailableException("No Bike Rider available for Order #" + order.getOrderId());
         }
 
-        // ২. যদি ইউজার সরাসরি সাইকেল চেয়ে থাকে
+        // ২. যদি ইউজার সরাসরি সাইকেল চেয়ে থাকে
         if ("Cycle".equalsIgnoreCase(preference)) {
             if (distanceKm > 5.0) {
-                throw new NoRiderAvailableException("Order distance (" + distanceKm + " km) is too far for a Cycle Rider! (Max 5 km)");
+                throw new NoRiderAvailableException(
+                        "Order distance (" + distanceKm + " km) is too far for a Cycle Rider! (Max 5 km)");
             }
             Rider c = searchRider("Bicycle", true);
             if (c != null) {
@@ -70,20 +71,20 @@ public class DeliveryManager {
 
         // ৩. যদি Preference = "Any" থাকে (স্মার্ট ডিসট্যান্স বেসড সিলেকশন)
         if (distanceKm <= 5.0) {
-            // কম দূরত্বে আগে সাইকেল রাইডারকে অগ্রাধিকার দেওয়া হবে
+            // কম দূরত্বে আগে সাইকেল রাইডারকে অগ্রাধিকার দেওয়া হবে
             Rider c = searchRider("Bicycle", true);
             if (c != null) {
                 c.assignOrder(order);
                 return c;
             }
-            // সাইকেল খালি না থাকলে বাইক দেওয়া হবে
+            // সাইকেল খালি না থাকলে বাইক দেওয়া হবে
             Rider b = searchRider("Bike", true);
             if (b != null) {
                 b.assignOrder(order);
                 return b;
             }
         } else {
-            // ৫ কিমির বেশি হলে সরাসরি বাইক রাইডার দেওয়া হবে
+            // ৫ কিমির বেশি হলে সরাসরি বাইক রাইডার দেওয়া হবে
             Rider b = searchRider("Bike", true);
             if (b != null) {
                 b.assignOrder(order);
@@ -91,7 +92,8 @@ public class DeliveryManager {
             }
         }
 
-        throw new NoRiderAvailableException("No suitable riders available to deliver Order #" + order.getOrderId() + " (" + distanceKm + " km)");
+        throw new NoRiderAvailableException(
+                "No suitable riders available to deliver Order #" + order.getOrderId() + " (" + distanceKm + " km)");
     }
 
     public boolean completeOrder(String riderId) {
@@ -101,5 +103,9 @@ public class DeliveryManager {
             return true;
         }
         return false;
+    }
+
+    public boolean removeOrder(String orderId) {
+        return orderList.removeIf(o -> o.getOrderId().equals(orderId) && "Delivered".equalsIgnoreCase(o.getStatus()));
     }
 }
