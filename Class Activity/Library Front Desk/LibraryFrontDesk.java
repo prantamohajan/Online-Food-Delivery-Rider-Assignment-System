@@ -74,7 +74,6 @@ public class LibraryFrontDesk {
                     serveNextPatron();
                     serveNextPatron();
                     System.out.println();
-
                     returnBook("Dune");
                     printShelf();
                     System.out.println();
